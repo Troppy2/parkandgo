@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Park&Go - A University of Minnesota Parking Guide</title>
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='Park&Go_Logo.png') }}">
+    <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@5.15.0/dist/maplibre-gl.css' />
+    <script src='https://unpkg.com/maplibre-gl@5.15.0/dist/maplibre-gl.js'></script>
+</head>
+
+<body>
+    <!--navigation button-->
+    <div class="nav_button">
+        <div class="menu_icon_box" id="menu-button">
+            <div class="line1"></div>
+            <div class="line2"></div>
+            <div class="line3"></div>
+        </div>
+    </div>
+
+    <!--Parking Suggestion modal-->
+    <div class="new_parking_suggestion" id="parking-suggestion-btn">
+        <a>Parking Suggestion</a>
+    </div>
+
+    <div class="new_parking_suggestion_modal" id="new_parking_suggestion_modal">
+        <h4 class="modal-title">New Parking Suggestion</h4>
+
+        <label for="cost-input">Cost</label>
+        <input type="number" id="cost-input" class="modal-input" min="0" max="10" />
+
+        <label for="street-input">Street Name</label>
+        <input type="text" id="street-input" class="modal-input" />
+
+        <label for="parking-type-input">Parking Type</label>
+        <select id="parking-type-input" class="modal-select">
+            <option value="">Select Type</option>
+            <option value="street">Street / Metered Parking</option>
+            <option value="garage">Parking Ramp / Garage</option>
+            <option value="surface">Surface Lot</option>
+            <option value="contract">Permit / Contract Parking</option>
+            <option value="event">Event Parking</option>
+        </select>
+
+        <label for="campus-location-input">Campus Location</label>
+        <select id="campus-location-input" class="modal-select">
+            <option value="">Select Location</option>
+            <option value="east">East Bank</option>
+            <option value="west">West Bank</option>
+        </select>
+
+        <button class="modal-submit-btn">Submit</button>
+        <button class="modal-close-btn">Close</button>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="login-modal" id="login-modal">
+        <div class="modal-content">
+            <h2 class="modal-title">Welcome to Park&Go</h2>
+            <p class="modal-subtitle">Sign in to get personalized parking recommendations</p>
+
+            <button class="google-signin-btn" id="google-signin-btn">
+                <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                    <path fill="#EA4335"
+                        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                    <path fill="#4285F4"
+                        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                    <path fill="#FBBC05"
+                        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                    <path fill="#34A853"
+                        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                </svg>
+                Sign in with Google
+            </button>
+
+            <button class="login-modal-btn" id="login-modal-close">Close</button>
+        </div>
+    </div>
+
+    <!-- Profile Completion Modal -->
+    <div class="profile-modal" id="profile-modal">
+        <div class="modal-content">
+            <h2 class="modal-title">Complete Your Profile</h2>
+            <p class="modal-subtitle">Help us give you better parking recommendations</p>
+
+            <form id="profile-form">
+                <label for="major-input">Major</label>
+                <input type="text" id="major-input" class="modal-input" placeholder="e.g., Computer Science" required />
+
+                <label for="grade-level-input">Grade Level</label>
+                <select id="grade-level-input" class="modal-select" required>
+                    <option value="">Select Grade Level</option>
+                    <option value="Freshman">Freshman</option>
+                    <option value="Sophomore">Sophomore</option>
+                    <option value="Junior">Junior</option>
+                    <option value="Senior">Senior</option>
+                    <option value="Graduate">Graduate</option>
+                </select>
+
+                <label for="graduation-year-input">Graduation Year</label>
+                <input type="number" id="graduation-year-input" class="modal-input" placeholder="e.g., 2026" min="2024"
+                    max="2035" />
+
+                <label for="housing-type-input">Housing Type</label>
+                <select id="housing-type-input" class="modal-select" required>
+                    <option value="">Select Housing Type</option>
+                    <option value="On-Campus">On-Campus (Dorm)</option>
+                    <option value="Off-Campus">Off-Campus (Apartment)</option>
+                    <option value="Commuter">Commuter (Living at Home)</option>
+                </select>
+
+                <button type="submit" class="save-profile-modal-submit-btn">Save Profile</button>
+            </form>
+        </div>
+    </div>
+
+    <!--sidebar-->
+    <div class="sidebar" id="sidebar">
+        <h2 class="logo" id="logo-close">
+            <a href="#">
+                <span class="park-text">Park</span><span class="and">&</span><span class="go-text">Go</span>
+            </a>
+        </h2>
+
+        <!-- User Section -->
+        <div class="user-section" id="user-section">
+            <!-- Show when NOT logged in -->
+            <div class="not-logged-in" id="not-logged-in">
+                <button class="login-btn" id="login-btn">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
+                        <path
+                            d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z" />
+                    </svg>
+                    Sign In
+                </button>
+            </div>
+
+            <!-- Show when logged in -->
+            <div class="logged-in" id="logged-in" style="display: none;">
+                <div class="user-info">
+                    <img id="user-avatar" class="user-avatar" src="" alt="User" />
+                    <div class="user-details">
+                        <div id="user-name" class="user-name">Loading...</div>
+                        <div id="user-email" class="user-email">Loading...</div>
+                    </div>
+                </div>
+                <button class="logout-btn" id="logout-btn">Logout</button>
+            </div>
+        </div>
+
+        <div class="searchbar">
+            <input type="text" name="Search" id="search-input" placeholder="Search Parking Spots">
+            <div id="search-results-container" class="search-results"></div>
+        </div>
+        <div class="filter-section">
+            <h4 class="filter-title">Filters</h4>
+
+            <div class="filter-content">
+                <!-- Parking Type Filter -->
+                <div class="filter-group">
+                    <label for="parking-type-select">Parking Type</label>
+                    <select name="parking_type" id="parking-type-select" class="filter-select">
+                        <option value="">All Types</option>
+                        <option value="Street Parking">Street / Metered</option>
+                        <option value="Parking Garage">Parking Ramp</option>
+                        <option value="Surface Lot">Surface Lot</option>
+                        <option value="Permit">Permit Only</option>
+                    </select>
+                </div>
+
+                <!-- Campus Location Filter -->
+                <div class="filter-group">
+                    <label for="campus-location-select">Campus Location</label>
+                    <select name="campus_location" id="campus-location-select" class="filter-select">
+                        <option value="">All Locations</option>
+                        <option value="East Bank">East Bank</option>
+                        <option value="West Bank">West Bank</option>
+                    </select>
+                </div>
+
+                <!-- Max Cost Filter -->
+                <div class="filter-group">
+                    <label for="max-cost-range">Max Cost: <span id="cost-display">$5.00/hr</span></label>
+                    <input type="range" id="max-cost-range" class="filter-range" min="0" max="5" step="0.5" value="5">
+                </div>
+
+                <!-- Apply Filters Button -->
+                <button class="apply-filters-btn" id="apply-filters-btn">Apply Filters</button>
+
+                <!-- Clear Filters Button -->
+                <button class="clear-filters-btn" id="clear-filters-btn">Clear Filters</button>
+            </div>
+        </div>
+        <!--suggested parking spot-->
+        <div class="design-section">
+            <div class="design-title">
+                <p>Suggested Parking Spots</p>
+            </div>
+            <!--spot-card-->
+            <div class="design-section" id="suggestions-section">
+                <div class="design-title" id="suggestions-title">
+                    <p>Suggested Parking Spots</p>
+                </div>
+                <div id="suggestions-container">
+                    <!-- Spot cards will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+
+        <!--Git hub link-->
+        <div class="git_hub_link">
+            <a href="https://github.com/Troppy2" class="git_hub_link_title">GitHub</a>
+        </div>
+    </div>
+
+    <!--parking spot pin-->
+    <div class="parking-spot-pin" id="parking_spot_pin">
+        <p id="location_pin">&#x1F4CD;</p>
+    </div>
+    <!--Direction Modals-->
+    <div class="directions-modal" id="directions-modal">
+        <div class="directions-header">
+            <h3 id="destination-name">Destination</h3>
+            <button class="close-directions-btn" id="close-directions-btn">×</button>
+        </div>
+
+        <div class="directions-info">
+            <div class="distance-time-container">
+                <div class="info-item">
+                    <span class="info-label">Distance</span>
+                    <span class="info-value" id="route-distance">Calculating...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Est. Time</span>
+                    <span class="info-value" id="route-duration">Calculating...</span>
+                </div>
+            </div>
+
+            <div class="travel-mode-toggle">
+                <button class="mode-btn active" data-mode="driving" id="mode-driving">
+                    <span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-car-front-fill" viewBox="0 0 16 16">
+                            <path
+                                d="M2.52 3.515A2.5 2.5 0 0 1 4.82 2h6.362c1 0 1.904.596 2.298 1.515l.792 1.848c.075.175.21.319.38.404.5.25.855.715.965 1.262l.335 1.679q.05.242.049.49v.413c0 .814-.39 1.543-1 1.997V13.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1.338c-1.292.048-2.745.088-4 .088s-2.708-.04-4-.088V13.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1.892c-.61-.454-1-1.183-1-1.997v-.413a2.5 2.5 0 0 1 .049-.49l.335-1.68c.11-.546.465-1.012.964-1.261a.8.8 0 0 0 .381-.404l.792-1.848ZM3 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2m10 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2M6 8a1 1 0 0 0 0 2h4a1 1 0 1 0 0-2zM2.906 5.189a.51.51 0 0 0 .497.731c.91-.073 3.35-.17 4.597-.17s3.688.097 4.597.17a.51.51 0 0 0 .497-.731l-.956-1.913A.5.5 0 0 0 11.691 3H4.309a.5.5 0 0 0-.447.276L2.906 5.19Z" />
+                        </svg></span> Driving
+                </button>
+                <button class="mode-btn" data-mode="walking" id="mode-walking">
+                    <span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-person-walking" viewBox="0 0 16 16">
+                            <path
+                                d="M9.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0M6.44 3.752A.75.75 0 0 1 7 3.5h1.445c.742 0 1.32.643 1.243 1.38l-.43 4.083a1.8 1.8 0 0 1-.088.395l-.318.906.213.242a.8.8 0 0 1 .114.175l2 4.25a.75.75 0 1 1-1.357.638l-1.956-4.154-1.68-1.921A.75.75 0 0 1 6 8.96l.138-2.613-.435.489-.464 2.786a.75.75 0 1 1-1.48-.246l.5-3a.75.75 0 0 1 .18-.375l2-2.25Z" />
+                            <path
+                                d="M6.25 11.745v-1.418l1.204 1.375.261.524a.8.8 0 0 1-.12.231l-2.5 3.25a.75.75 0 1 1-1.19-.914zm4.22-4.215-.494-.494.205-1.843.006-.067 1.124 1.124h1.44a.75.75 0 0 1 0 1.5H11a.75.75 0 0 1-.531-.22Z" />
+                        </svg></span> Walking
+                </button>
+            </div>
+        </div>
+
+        <button class="start-navigation-btn" id="start-navigation-btn">
+            Start Navigation
+        </button>
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div class="navigation-overlay" id="navigation-overlay">
+        <div class="nav-header">
+            <div class="nav-instruction" id="nav-instruction">Head north on Oak Street</div>
+            <button class="end-nav-btn" id="end-nav-btn">End Navigation</button>
+        </div>
+
+        <div class="nav-stats">
+            <div class="nav-stat">
+                <span class="nav-stat-label">Distance Left</span>
+                <span class="nav-stat-value" id="nav-distance-left">0.5 mi</span>
+            </div>
+            <div class="nav-stat">
+                <span class="nav-stat-label">ETA</span>
+                <span class="nav-stat-value" id="nav-eta">2 min</span>
+            </div>
+        </div>
+    </div>
+
+    <!--locate me button-->
+    <div class="locate_me_button" id="locate_me_button"></div>
+    <!--maplelibre 3D map-->
+    <div id="map"></div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+
+</html>

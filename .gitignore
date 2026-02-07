@@ -1,0 +1,7 @@
+.env
+requirements.txt
+parkandgo project structure.txt
+parkandgo_db.sql
+venv/
+__pycache__/
+.vscode/
