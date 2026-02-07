@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Park&Go
 
 **Park&Go** is a web-based application that helps students, faculty, and visitors locate and compare affordable parking spots near the University of Minnesota Twin Cities campus. By providing search, filtering, and personalized suggestions, it aims to streamline the commuting experience and reduce the time spent looking for parking.
@@ -54,3 +55,6 @@ This version represents the second iteration of the project.
 =======
 # ParkGo
 >>>>>>> 1c79b6d (Initial commit)
+=======
+# parkandgo
+>>>>>>> 66f81f583a3892dd256d1bea15e705496832d5e9
