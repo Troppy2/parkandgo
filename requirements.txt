@@ -4,7 +4,7 @@ Werkzeug==2.2.3
 Flask-Login==0.6.2
 Flask-SQLAlchemy==3.0.5
 
-# PostgreSQL Driver (REMOVE PyMySQL)
+# PostgreSQL Driver
 psycopg2-binary==2.9.9
 
 # Authentication & Security
@@ -22,3 +22,4 @@ gunicorn==21.2.0
 
 # SQLAlchemy
 SQLAlchemy==2.0.23
+
