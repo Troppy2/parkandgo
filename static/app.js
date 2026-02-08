@@ -420,7 +420,7 @@ if (suggestionSubmitBtn) {
             street_name: streetName,
             parking_type: parkingType,
             campus_location: campusLocation,
-            address: streetName, // Using street name as address for now
+            address: streetName, 
             is_verified: false
         };
 
@@ -463,7 +463,7 @@ let selectedSpot = null;
 
 // ============= DROP PIN ON MAP WITH COORDINATE VALIDATION =============
 function dropPinAtLocation(lat, lon, spotName) {
-    // CRITICAL: Validate coordinates to prevent [0,0] or invalid pins
+    // Validate coordinates to prevent [0,0] or invalid pins
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
         console.warn(`Invalid coordinates for ${spotName}: lat=${lat}, lon=${lon}`);
         return null;
@@ -475,7 +475,7 @@ function dropPinAtLocation(lat, lon, spotName) {
         return null;
     }
     
-    // Optional: Validate coordinates are in reasonable range for UMN campus
+    //  Validate coordinates are in reasonable range for UMN campus
     // UMN is around lat: 44.97, lon: -93.23
     const validLatRange = lat >= 44.9 && lat <= 45.1;
     const validLonRange = lon >= -93.3 && lon <= -93.1;
@@ -803,7 +803,7 @@ async function calculateRoute(mode) {
                 const distanceMiles = route.distance / 1609.34; // meters to miles
                 let duration = route.duration / 60; // seconds to minutes
                 
-                // Adjust walking time by 1.3-1.5x (use 1.4x as middle ground)
+                // Adjust walking time by 1.3-1.5x (1.4x as middle ground)
                 if (mode === 'walking') {
                     duration = duration * 1.4;
                 }
@@ -965,7 +965,7 @@ function updateUserPosition(position) {
         etaEl.textContent = formatEta(getEtaMinutes(distanceToDestination));
     }
 
-    // Check if arrived (within 50 meters / ~0.03 miles)
+    // Check if arrived (within ~0.03 miles)
     if (distanceToDestination < 0.03) {
         endNavigation(true);
     }
@@ -1138,39 +1138,4 @@ function showError(error) {
             console.log("An unknown error occurred.");
             break;
     }
-}
-
-// ============= TEST MODE FOR NAVIGATION =============
-// Set TEST_MODE to true to simulate navigation from a fixed location
-const TEST_MODE = false;
-const TEST_START_LOCATION = {
-    lat: 44.9742,  // Change to your house coordinates
-    lon: -93.2314
-};
-
-// Override geolocation for testing
-const originalGetCurrentPosition = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
-const originalWatchPosition = navigator.geolocation.watchPosition.bind(navigator.geolocation);
-
-if (TEST_MODE) {
-    navigator.geolocation.getCurrentPosition = function(success, error, options) {
-        success({
-            coords: {
-                latitude: TEST_START_LOCATION.lat,
-                longitude: TEST_START_LOCATION.lon,
-                accuracy: 10
-            }
-        });
-    };
-    
-    navigator.geolocation.watchPosition = function(success, error, options) {
-        success({
-            coords: {
-                latitude: TEST_START_LOCATION.lat,
-                longitude: TEST_START_LOCATION.lon,
-                accuracy: 10
-            }
-        });
-        return 1; // fake watch ID
-    };
 }
