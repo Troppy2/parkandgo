@@ -1,0 +1,22 @@
+# Flask Framework
+Flask==2.2.5
+Werkzeug==2.2.3
+Flask-Login==0.6.2
+Flask-SQLAlchemy==3.0.5
+
+# Database Drivers
+PyMySQL==1.1.0
+psycopg2-binary==2.9.9
+
+# Authentication & Security
+oauthlib==3.2.2
+cryptography==41.0.7
+
+# HTTP Requests
+requests==2.31.0
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Production Server
+gunicorn==21.2.0

@@ -259,6 +259,7 @@ const parkingTypeFilter = document.getElementById('parking-type-select');
 const campusLocationFilter = document.getElementById('campus-location-select');
 const maxCostRange = document.getElementById('max-cost-range');
 const costDisplay = document.getElementById('cost-display');
+const onlyWithDirectionsCheckbox = document.getElementById('only-with-directions');
 const applyFiltersBtn = document.getElementById('apply-filters-btn');
 const clearFiltersBtn = document.getElementById('clear-filters-btn');
 
@@ -270,12 +271,13 @@ if (maxCostRange && costDisplay) {
     });
 }
 
-// Apply filters
+// Apply filters - FIXED VERSION WITH DIRECTIONS FILTER
 if (applyFiltersBtn) {
     applyFiltersBtn.addEventListener('click', async () => {
         const parkingType = parkingTypeFilter.value;
         const campus = campusLocationFilter.value;
         const maxCost = maxCostRange.value;
+        const onlyWithDirections = onlyWithDirectionsCheckbox ? onlyWithDirectionsCheckbox.checked : false;
 
         // Build query string
         const params = new URLSearchParams();
@@ -287,13 +289,91 @@ if (applyFiltersBtn) {
             const response = await fetch(`/api/parking-spots/filter?${params.toString()}`);
             const data = await response.json();
 
-            if (data.status === 'success') {
-                console.log(`Found ${data.count} parking spots:`, data.data);
-                // TODO: Update the parking spots display (Phase 3)
+            if (data.status === 'success' && data.data && data.data.length > 0) {
+                console.log(`Found ${data.count} parking spots matching filters`);
+                
+                // Filter out spots without directions if checkbox is checked
+                let filteredSpots = data.data;
+                if (onlyWithDirections) {
+                    filteredSpots = data.data.filter(spot => 
+                        spot.latitude && spot.longitude && 
+                        Number.isFinite(Number(spot.latitude)) && 
+                        Number.isFinite(Number(spot.longitude)) &&
+                        !(Number(spot.latitude) === 0 && Number(spot.longitude) === 0)
+                    );
+                }
+                
+                if (filteredSpots.length > 0) {
+                    // Display filtered results in suggestions container
+                    displayFilteredResults(filteredSpots);
+                    
+                    // If there's at least one result with valid coordinates, drop a pin at the first one
+                    const firstValidSpot = filteredSpots.find(spot => 
+                        spot.latitude && spot.longitude && 
+                        Number.isFinite(Number(spot.latitude)) && 
+                        Number.isFinite(Number(spot.longitude))
+                    );
+                    
+                    if (firstValidSpot) {
+                        const lat = Number(firstValidSpot.latitude);
+                        const lon = Number(firstValidSpot.longitude);
+                        dropPinAtLocation(lat, lon, firstValidSpot.spot_name);
+                    }
+                } else {
+                    // No results after filtering for directions
+                    const container = document.getElementById('suggestions-container');
+                    if (container) {
+                        container.innerHTML = `
+                            <div class="spot-card" style="display: block;">
+                                <div class="spot-header">
+                                    <div class="spot-title">No parking spots with directions match your filters</div>
+                                </div>
+                                <div class="spot-details" style="padding: 10px;">
+                                    Try unchecking "Only show spots with directions" or adjusting your criteria
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            } else {
+                // No results found
+                const container = document.getElementById('suggestions-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="spot-card" style="display: block;">
+                            <div class="spot-header">
+                                <div class="spot-title">No parking spots match your filters</div>
+                            </div>
+                            <div class="spot-details" style="padding: 10px;">
+                                Try adjusting your filter criteria
+                            </div>
+                        </div>
+                    `;
+                }
             }
         } catch (error) {
             console.error('Filter error:', error);
         }
+    });
+}
+
+// Display filtered results in suggestions container
+function displayFilteredResults(spots) {
+    const container = document.getElementById('suggestions-container');
+    const title = document.getElementById('suggestions-title');
+    
+    if (!container || !title) {
+        console.error('Suggestions container or title not found');
+        return;
+    }
+
+    // Clear previous suggestions
+    container.innerHTML = '';
+    title.style.display = 'block';
+
+    spots.forEach((spot, index) => {
+        const card = createSpotCard(spot, index + 1, true); // true = from filter
+        container.appendChild(card);
     });
 }
 
@@ -304,6 +384,15 @@ if (clearFiltersBtn) {
         campusLocationFilter.value = '';
         maxCostRange.value = 5;
         costDisplay.textContent = '$5.00/hr';
+        if (onlyWithDirectionsCheckbox) {
+            onlyWithDirectionsCheckbox.checked = false;
+        }
+        
+        // Clear suggestions container
+        const container = document.getElementById('suggestions-container');
+        if (container) {
+            container.innerHTML = '';
+        }
     });
 }
 
@@ -369,12 +458,33 @@ if (suggestionSubmitBtn) {
 }
 
 // ============= MAP MARKERS STATE =============
-// FIXED: Declared once at the top, removed duplicate declarations
 let currentMarker = null;
 let selectedSpot = null;
 
-// ============= DROP PIN ON MAP =============
+// ============= DROP PIN ON MAP WITH COORDINATE VALIDATION =============
 function dropPinAtLocation(lat, lon, spotName) {
+    // CRITICAL: Validate coordinates to prevent [0,0] or invalid pins
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+        console.warn(`Invalid coordinates for ${spotName}: lat=${lat}, lon=${lon}`);
+        return null;
+    }
+    
+    // Prevent pins at [0,0] (center of Earth)
+    if (lat === 0 && lon === 0) {
+        console.warn(`Prevented pin drop at [0,0] for ${spotName}`);
+        return null;
+    }
+    
+    // Optional: Validate coordinates are in reasonable range for UMN campus
+    // UMN is around lat: 44.97, lon: -93.23
+    const validLatRange = lat >= 44.9 && lat <= 45.1;
+    const validLonRange = lon >= -93.3 && lon <= -93.1;
+    
+    if (!validLatRange || !validLonRange) {
+        console.warn(`Coordinates outside UMN campus area for ${spotName}: lat=${lat}, lon=${lon}`);
+        // Don't return - still allow it, but warn
+    }
+
     // Remove existing marker if any
     if (currentMarker) {
         currentMarker.remove();
@@ -383,8 +493,12 @@ function dropPinAtLocation(lat, lon, spotName) {
     // Create custom marker element
     const markerEl = document.createElement('div');
     markerEl.className = 'custom-map-marker';
-    markerEl.textContent = '📍';
-    markerEl.style.fontSize = '30px';
+    markerEl.style.backgroundImage = "url('/static/destination_pin.png')";
+    markerEl.style.width = '36px';
+    markerEl.style.height = '36px';
+    markerEl.style.backgroundSize = 'contain';
+    markerEl.style.backgroundRepeat = 'no-repeat';
+    markerEl.style.backgroundPosition = 'center';
     markerEl.style.cursor = 'pointer';
 
     // Create marker
@@ -407,6 +521,7 @@ function dropPinAtLocation(lat, lon, spotName) {
     // Add click event to marker
     markerEl.addEventListener('click', () => {
         console.log(`Clicked marker for spot: ${spotName}`);
+        
     });
 
     return currentMarker;
@@ -454,29 +569,23 @@ if (searchInput && searchResultsContainer) {
                             const lon = Number(spot.longitude);
 
                             if (Number.isFinite(lat) && Number.isFinite(lon)) {
-                                dropPinAtLocation(lat, lon, spotName);
+                                const marker = dropPinAtLocation(lat, lon, spotName);
                                 
-                                // Clear search
-                                searchInput.value = '';
-                                searchResultsContainer.innerHTML = '';
+                                if (marker) {
+                                    // Clear search
+                                    searchInput.value = '';
+                                    searchResultsContainer.innerHTML = '';
 
-                                // Get user location and display suggestions
-                                if (navigator.geolocation) {
-                                    navigator.geolocation.getCurrentPosition(
-                                        async (position) => {
-                                            await displaySuggestions(
-                                                spot,
-                                                position.coords.latitude,
-                                                position.coords.longitude
-                                            );
-                                        },
-                                        () => {
-                                            // If geolocation fails, still show suggestions
-                                            displaySuggestions(spot, null, null);
-                                        }
-                                    );
-                                } else {
-                                    displaySuggestions(spot, null, null);
+                                    // Close sidebar
+                                    if (sidebar && menuButton && parkingSuggestionBtn) {
+                                        sidebar.classList.remove('open');
+                                        menuButton.classList.remove('hidden');
+                                        parkingSuggestionBtn.classList.remove('visible');
+                                        menuButton.classList.remove('active');
+                                    }
+
+                                    // Open directions modal instead of just showing suggestions
+                                    showDirectionsModal(spot);
                                 }
                             } else {
                                 console.log('Location coordinates not available for this spot');
@@ -552,7 +661,7 @@ async function displaySuggestions(selectedSpot, userLat, userLon) {
         
         if (data.status === 'success' && Array.isArray(data.data) && data.data.length > 0) {
             data.data.forEach((spot, index) => {
-                const card = createSpotCard(spot, index + 1);
+                const card = createSpotCard(spot, index + 1, false);
                 container.appendChild(card);
             });
         } else {
@@ -572,14 +681,24 @@ async function displaySuggestions(selectedSpot, userLat, userLon) {
     }
 }
 
-// ============= CREATE SPOT CARD =============
-function createSpotCard(spot, rank) {
+// ============= CREATE SPOT CARD WITH DIRECTIONS CHECK =============
+function createSpotCard(spot, rank, fromFilter = false) {
     const card = document.createElement('div');
     card.className = 'spot-card';
     card.style.display = 'block';
 
     const costText = spot.cost != null ? `$${Number(spot.cost).toFixed(2)}/hr` : 'N/A';
     const walkTime = spot.walk_time || 'Unknown';
+    
+    // Check if spot has valid coordinates for directions
+    const hasValidCoords = spot.latitude && spot.longitude && 
+                          Number.isFinite(Number(spot.latitude)) && 
+                          Number.isFinite(Number(spot.longitude)) &&
+                          !(Number(spot.latitude) === 0 && Number(spot.longitude) === 0);
+
+    const buttonText = hasValidCoords ? 'Get Directions' : 'No Directions Available';
+    const buttonDisabled = hasValidCoords ? '' : 'disabled';
+    const buttonStyle = hasValidCoords ? '' : 'opacity: 0.5; cursor: not-allowed;';
 
     card.innerHTML = `
         <div class="spot-header">
@@ -601,16 +720,18 @@ function createSpotCard(spot, rank) {
             </div>
         </div>
         <div class="spot-actions">
-            <button class="go-to-spot-btn" data-spot-id="${spot.spot_id}">
-                Get Directions →
+            <button class="go-to-spot-btn" data-spot-id="${spot.spot_id}" ${buttonDisabled} style="${buttonStyle}">
+                ${buttonText}
             </button>
         </div>
     `;
 
     const btn = card.querySelector('.go-to-spot-btn');
-    btn.addEventListener('click', () => {
-        handleSpotSelection(spot);
-    });
+    if (hasValidCoords) {
+        btn.addEventListener('click', () => {
+            handleSpotSelection(spot);
+        });
+    }
     
     return card;
 }
@@ -646,6 +767,7 @@ let userLocationMarker = null;
 let watchPositionId = null;
 let currentTravelMode = 'driving';
 let destinationCoords = null;
+let currentRouteSummary = null;
 
 // ============= SHOW DIRECTIONS MODAL =============
 function showDirectionsModal(spot) {
@@ -682,14 +804,27 @@ async function calculateRoute(mode) {
 
             if (data.code === 'Ok' && data.routes.length > 0) {
                 const route = data.routes[0];
-                const distance = (route.distance / 1609.34).toFixed(1); // meters to miles
-                const duration = Math.round(route.duration / 60); // seconds to minutes
+                const distanceMiles = route.distance / 1609.34; // meters to miles
+                let duration = route.duration / 60; // seconds to minutes
+                
+                // Adjust walking time by 1.3-1.5x (use 1.4x as middle ground)
+                if (mode === 'walking') {
+                    duration = duration * 1.4;
+                }
+                
+                currentRouteSummary = {
+                    distanceMiles,
+                    durationMinutes: duration,
+                    mode
+                };
+
+                const roundedDuration = Math.max(1, Math.round(duration));
 
                 const distanceEl = document.getElementById('route-distance');
                 const durationEl = document.getElementById('route-duration');
                 
-                if (distanceEl) distanceEl.textContent = `${distance} mi`;
-                if (durationEl) durationEl.textContent = `${duration} min`;
+                if (distanceEl) distanceEl.textContent = `${distanceMiles.toFixed(1)} mi`;
+                if (durationEl) durationEl.textContent = `${roundedDuration} min`;
 
                 drawRouteOnMap(route.geometry);
             }
@@ -800,8 +935,12 @@ function updateUserPosition(position) {
     if (!userLocationMarker) {
         const el = document.createElement('div');
         el.className = 'user-location-marker';
-        el.textContent = '🔵';
-        el.style.fontSize = '20px';
+        el.style.backgroundImage = "url('/static/user_location_pin.png')";
+        el.style.width = '28px';
+        el.style.height = '28px';
+        el.style.backgroundSize = 'contain';
+        el.style.backgroundRepeat = 'no-repeat';
+        el.style.backgroundPosition = 'center';
 
         userLocationMarker = new maplibregl.Marker({
             element: el
@@ -829,6 +968,10 @@ function updateUserPosition(position) {
     if (distanceEl) {
         distanceEl.textContent = `${distanceToDestination.toFixed(2)} mi`;
     }
+    const etaEl = document.getElementById('nav-eta');
+    if (etaEl) {
+        etaEl.textContent = formatEta(getEtaMinutes(distanceToDestination));
+    }
 
     // Check if arrived (within 50 meters / ~0.03 miles)
     if (distanceToDestination < 0.03) {
@@ -841,6 +984,41 @@ function updateUserPosition(position) {
         zoom: 16,
         duration: 1000
     });
+}
+
+function getEtaMinutes(distanceMiles) {
+    if (!Number.isFinite(distanceMiles) || distanceMiles <= 0) {
+        return 0;
+    }
+
+    let milesPerMinute = null;
+    if (currentRouteSummary &&
+        Number.isFinite(currentRouteSummary.distanceMiles) &&
+        Number.isFinite(currentRouteSummary.durationMinutes) &&
+        currentRouteSummary.distanceMiles > 0 &&
+        currentRouteSummary.durationMinutes > 0) {
+        milesPerMinute = currentRouteSummary.distanceMiles / currentRouteSummary.durationMinutes;
+    }
+
+    if (!milesPerMinute || milesPerMinute <= 0) {
+        milesPerMinute = currentTravelMode === 'walking' ? 0.05 : 0.4;
+    }
+
+    const eta = distanceMiles / milesPerMinute;
+    return Math.max(1, Math.round(eta));
+}
+
+function formatEta(minutes) {
+    if (!Number.isFinite(minutes)) {
+        return '...';
+    }
+    if (minutes <= 0) {
+        return 'Arrived';
+    }
+    if (minutes < 1) {
+        return '<1 min';
+    }
+    return `${minutes} min`;
 }
 
 function calculateDistanceInMiles(lat1, lon1, lat2, lon2) {
@@ -881,9 +1059,26 @@ function endNavigation(arrived) {
         userLocationMarker.remove();
         userLocationMarker = null;
     }
+    
+    // Remove the destination pin
+    if (currentMarker) {
+        currentMarker.remove();
+        currentMarker = null;
+    }
+    
+    // Remove route from map
+    if (map.getLayer('route')) {
+        map.removeLayer('route');
+    }
+    if (map.getSource('route')) {
+        map.removeSource('route');
+    }
+    
+    // Clear destination coords
+    destinationCoords = null;
 
     if (arrived) {
-        alert('You have arrived at your destination!');
+        console.log('You have arrived at your destination!');
     }
 }
 
@@ -895,6 +1090,23 @@ if (closeDirectionsBtn) {
         if (directionsModal) {
             directionsModal.classList.remove('open');
         }
+        
+        // Remove the pin when closing directions
+        if (currentMarker) {
+            currentMarker.remove();
+            currentMarker = null;
+        }
+        
+        // Remove route from map
+        if (map.getLayer('route')) {
+            map.removeLayer('route');
+        }
+        if (map.getSource('route')) {
+            map.removeSource('route');
+        }
+        
+        // Clear destination coords
+        destinationCoords = null;
     });
 }
 
@@ -934,4 +1146,39 @@ function showError(error) {
             console.log("An unknown error occurred.");
             break;
     }
+}
+
+// ============= TEST MODE FOR NAVIGATION =============
+// Set TEST_MODE to true to simulate navigation from a fixed location
+const TEST_MODE = false;
+const TEST_START_LOCATION = {
+    lat: 44.9742,  // Change to your house coordinates
+    lon: -93.2314
+};
+
+// Override geolocation for testing
+const originalGetCurrentPosition = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
+const originalWatchPosition = navigator.geolocation.watchPosition.bind(navigator.geolocation);
+
+if (TEST_MODE) {
+    navigator.geolocation.getCurrentPosition = function(success, error, options) {
+        success({
+            coords: {
+                latitude: TEST_START_LOCATION.lat,
+                longitude: TEST_START_LOCATION.lon,
+                accuracy: 10
+            }
+        });
+    };
+    
+    navigator.geolocation.watchPosition = function(success, error, options) {
+        success({
+            coords: {
+                latitude: TEST_START_LOCATION.lat,
+                longitude: TEST_START_LOCATION.lon,
+                accuracy: 10
+            }
+        });
+        return 1; // fake watch ID
+    };
 }

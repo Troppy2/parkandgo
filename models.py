@@ -108,6 +108,8 @@ class ParkingSpot(db.Model):
             'walk_time': self.walk_time,
             'near_buildings': self.near_buildings,
             'address': self.address,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
             'is_verified': self.is_verified
         }
     
