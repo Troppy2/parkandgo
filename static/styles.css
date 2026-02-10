@@ -18,10 +18,13 @@ body {
     position: absolute;
     inset: 0;
     z-index: 1;
+<<<<<<< HEAD
 }
 
 .maplibregl-canvas {
     z-index: 1;
+=======
+>>>>>>> e194831ad0bc656af59107accdbca71d4cd44439
 }
 
 /* ============= MENU STYLE ============= */
@@ -66,7 +69,7 @@ body {
     transform: translate(0px, -10px)rotate(-45deg);
 }
 
-/* ============= LOCATE-ME BUTTON (fix later) ============= */
+/* ============= LOCATE-ME BUTTON ============= */
 .locate_me_button {
     z-index: 2;
     width: 30px;
@@ -833,7 +836,7 @@ a {
 
 /* ============= SUGGESTED PARKING SPOTS STYLE ============= */
 
-/*spot sug 1*/
+/*spot sug*/
 .design-title {
     display: none;
     text-align: center;
@@ -966,7 +969,11 @@ a {
 }
 
 .maplibregl-marker {
+<<<<<<< HEAD
     z-index: 2 !important;
+=======
+    z-index: 2;
+>>>>>>> e194831ad0bc656af59107accdbca71d4cd44439
 }
 
 @keyframes bounce {

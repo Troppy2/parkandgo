@@ -8,14 +8,15 @@ class Config:
     # Flask Configuration
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     
-    # Database Configuration
-    DB_USER = os.environ.get('DB_USERNAME', 'root')
-    DB_PASS = os.environ.get('DB_PASSWORD', '')
-    DB_HOST = os.environ.get('DB_HOST', 'localhost')
-    DB_PORT = os.environ.get('DB_PORT', '3306')
-    DB_NAME = os.environ.get('DB_NAME', 'parkandgo_db')
+    # Database Configuration - UPDATED FOR POSTGRESQL
+    # Use DATABASE_URL from Render environment variables
+    DATABASE_URL = os.environ.get('DATABASE_URL')
     
-    SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+    # Fix DATABASE_URL format if needed (Render sometimes gives postgres:// instead of postgresql://)
+    if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL or 'postgresql://localhost/parkandgo_db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Google OAuth Configuration
@@ -24,6 +25,6 @@ class Config:
     GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
     
     # Session Configuration
-    SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
-    SESSION_COOKIE_HTTPONLY = True  # Prevents JavaScript from accessing session cookie
-    SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection
+    SESSION_COOKIE_SECURE = True  # Set to True for production
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'

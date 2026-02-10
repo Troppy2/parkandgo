@@ -13,8 +13,16 @@ services:
         fromDatabase:
           name: parkandgo-db
           property: connectionString
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
 
 databases:
   - name: parkandgo-db
-    databaseName: parkandgo_db
+    databaseName: parkandgo
     user: parkandgo_user
+    plan: free
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere

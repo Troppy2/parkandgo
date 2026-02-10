@@ -420,7 +420,7 @@ if (suggestionSubmitBtn) {
             street_name: streetName,
             parking_type: parkingType,
             campus_location: campusLocation,
-            address: streetName, // Using street name as address for now
+            address: streetName, 
             is_verified: false
         };
 
@@ -463,7 +463,11 @@ let selectedSpot = null;
 
 // ============= DROP PIN ON MAP WITH COORDINATE VALIDATION =============
 function dropPinAtLocation(lat, lon, spotName) {
+<<<<<<< HEAD
     // CRITICAL: Validate coordinates to prevent [0,0] or invalid pins
+=======
+    // Validate coordinates to prevent [0,0] or invalid pins
+>>>>>>> e194831ad0bc656af59107accdbca71d4cd44439
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
         console.warn(`Invalid coordinates for ${spotName}: lat=${lat}, lon=${lon}`);
         return null;
@@ -475,7 +479,11 @@ function dropPinAtLocation(lat, lon, spotName) {
         return null;
     }
     
+<<<<<<< HEAD
     // Optional: Validate coordinates are in reasonable range for UMN campus
+=======
+    //  Validate coordinates are in reasonable range for UMN campus
+>>>>>>> e194831ad0bc656af59107accdbca71d4cd44439
     // UMN is around lat: 44.97, lon: -93.23
     const validLatRange = lat >= 44.9 && lat <= 45.1;
     const validLonRange = lon >= -93.3 && lon <= -93.1;
@@ -696,7 +704,11 @@ function createSpotCard(spot, rank, fromFilter = false) {
                           Number.isFinite(Number(spot.longitude)) &&
                           !(Number(spot.latitude) === 0 && Number(spot.longitude) === 0);
 
+<<<<<<< HEAD
     const buttonText = hasValidCoords ? 'Get Directions' : 'No Directions Available';
+=======
+    const buttonText = hasValidCoords ? 'Get Directions →' : 'No Directions Available';
+>>>>>>> e194831ad0bc656af59107accdbca71d4cd44439
     const buttonDisabled = hasValidCoords ? '' : 'disabled';
     const buttonStyle = hasValidCoords ? '' : 'opacity: 0.5; cursor: not-allowed;';
 
@@ -807,7 +819,11 @@ async function calculateRoute(mode) {
                 const distanceMiles = route.distance / 1609.34; // meters to miles
                 let duration = route.duration / 60; // seconds to minutes
                 
+<<<<<<< HEAD
                 // Adjust walking time by 1.3-1.5x (use 1.4x as middle ground)
+=======
+                // Adjust walking time by 1.3-1.5x (1.4x as middle ground)
+>>>>>>> e194831ad0bc656af59107accdbca71d4cd44439
                 if (mode === 'walking') {
                     duration = duration * 1.4;
                 }
@@ -973,7 +989,7 @@ function updateUserPosition(position) {
         etaEl.textContent = formatEta(getEtaMinutes(distanceToDestination));
     }
 
-    // Check if arrived (within 50 meters / ~0.03 miles)
+    // Check if arrived (within ~0.03 miles)
     if (distanceToDestination < 0.03) {
         endNavigation(true);
     }
@@ -1147,6 +1163,7 @@ function showError(error) {
             break;
     }
 }
+<<<<<<< HEAD
 
 // ============= TEST MODE FOR NAVIGATION =============
 // Set TEST_MODE to true to simulate navigation from a fixed location
@@ -1182,3 +1199,5 @@ if (TEST_MODE) {
         return 1; // fake watch ID
     };
 }
+=======
+>>>>>>> e194831ad0bc656af59107accdbca71d4cd44439

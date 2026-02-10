@@ -22,14 +22,25 @@ login_manager.login_view = 'index'
 # Initialize Google OAuth
 google_auth = init_auth(app)
 
-# Test database connection
+# Initialize database and seed data
 with app.app_context():
     try:
+        # Create tables if they don't exist
         db.create_all()
-        print("Database connected and tables are ready.")
+        print("Database tables are ready")
+        
+        # Check if we need to seed data
+        from models import ParkingSpot
+        if not ParkingSpot.query.first():
+            print("No data found, running seed...")
+            from init_db import init_database
+            init_database()
+        else:
+            print("Database already has data")
+            
     except Exception as e:
-        print(f"Database connection failed: {e}")
-
+        print(f"Database initialization note: {e}")
+        print("This might be normal if tables already exist")
 # ============= FLASK-LOGIN USER LOADER =============
 @login_manager.user_loader
 def load_user(user_id):
