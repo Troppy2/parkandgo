@@ -1,7 +1,3 @@
-Here is the updated `README.md` file for the Park&Go project. It now includes a dedicated section for the performance testing you conducted, detailing the setup, results, and key findings from the Locust test.
-
----
-
 # Park&Go v1.05
 
 A smart parking assistant web application designed for the University of Minnesota Twin Cities campus. Park&Go helps students find optimal parking spots based on their location, schedule, and preferences.
