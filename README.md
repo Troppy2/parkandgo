@@ -55,7 +55,7 @@ This data-driven test has provided an essential baseline for future infrastructu
 - Resolved duplicate variable declarations causing JavaScript runtime errors
 - Fixed navigation overlay not dismissing after route completion
 - Implemented coordinate validation to prevent pins at [0,0] (center of Earth)
-- Corrected travel time calculations to differentiate between walking and driving modes
+- Corrected travel time calculations to differentiate between walking and driving modes (Still Needs Fixing)
 
 **Stability Improvements**
 - Added null checks throughout codebase to prevent DOM-related crashes
